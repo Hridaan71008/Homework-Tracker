@@ -107,6 +107,46 @@ button:active{transform:scale(.96)!important}
 .grp:last-child{margin-bottom:0}
 .grp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;font-size:1.05rem;padding-bottom:6px;border-bottom:2px solid var(--accent)}
 .grp-h+.item{border-top:0}
+
+/* Ask AI */
+#aiFab{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:60;padding:12px 18px;border-radius:99px;font-weight:700;background:var(--accent);color:var(--accent-text);border:1px solid var(--accent);box-shadow:0 8px 24px rgba(79,70,229,.38)}
+#aiFab.on{background:var(--card);color:var(--text);border-color:var(--line)}
+.aib{color:var(--accent);padding:4px 10px;border:0;background:none;font-size:1rem;flex:none}
+#ai{position:fixed;inset:0;z-index:70;background:rgba(10,12,22,.58);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+#ai[hidden]{display:none}
+@media (min-height:640px){#ai{align-items:center}}
+.aibox{background:var(--card);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:calc(100vh - 32px);overflow:auto;padding:16px;box-shadow:0 18px 50px rgba(10,12,25,.45)}
+.aihead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+.aihead b{font-size:1.1rem}
+.aihead button{border:0;background:none;color:var(--muted);padding:4px 10px}
+.aick{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.aick button{border-radius:99px;padding:6px 12px;font-size:.85rem}
+.aick button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.aiactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.aiactions button{flex:1 1 130px;font-weight:600}
+.aihint{font-size:.75rem;color:var(--muted);margin:10px 0 0}
+.aikey{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.aikey summary{font-size:.85rem;color:var(--muted);cursor:pointer}
+.aikey .row{margin-top:8px}
+.aikey input{font-size:.85rem;min-width:0}
+.aikey b{color:var(--ok)}
+.aikeystate{font-size:.8rem;color:var(--muted);margin-top:8px}
+.aikeystate button{border:0;background:none;color:var(--bad);padding:2px 6px;font-size:.8rem}
+#aiThread{display:none;margin:0 0 14px}
+#aiThread.on{display:block;border-bottom:1px solid var(--line);padding-bottom:4px}
+.msg{border-radius:12px;padding:9px 12px;margin-bottom:10px;font-size:.92rem;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.msg .who{font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px;font-weight:700;letter-spacing:.02em}
+.msg.me{background:rgba(129,140,248,.18);margin-left:26px}
+.msg.ai{background:var(--bg);border:1px solid var(--line);margin-right:26px}
+.msg.err{background:rgba(220,38,38,.1);border:1px solid var(--bad);color:var(--text)}
+.typing{font-size:.85rem;color:var(--muted);margin:0 0 10px}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pchip{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;border:1px solid var(--line);border-radius:99px;padding:3px 4px 3px 10px;background:var(--bg);color:var(--muted);max-width:100%}
+.pchip button{border:0;background:none;color:var(--bad);padding:0 4px;font-size:.8rem}
+.att{color:var(--muted);padding:4px 8px;border:0;background:none;flex:none;font-size:1rem}
+.aifiles{font-size:.78rem;color:var(--muted);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.aifiles:empty{display:none}
+.msg.note{background:var(--bg);border:1px dashed var(--line);color:var(--muted);font-size:.8rem}
 </style>
 </head>
 <body>
@@ -151,6 +191,49 @@ button:active{transform:scale(.96)!important}
   <div class="listwrap"><button id="fsBtn" aria-label="Full screen" title="Full screen">⤢</button><div class="card" id="list"></div></div>
   </div>
   <p class="note">Saved in this browser on this device.</p>
+</div>
+
+<input id="filePick" type="file" multiple hidden accept="application/pdf,image/*,.txt,.md,.markdown,.csv,.tsv,.json,.html,.htm,.css,.js,.ts,.py,.java,.c,.cpp,.h">
+
+<button id="aiFab" aria-haspopup="dialog" aria-controls="ai" title="Ask AI for help">✨ Ask AI</button>
+
+<div id="ai" hidden>
+  <div class="aibox" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+    <div class="aihead">
+      <b id="aiTitle">✨ Ask AI for help</b>
+      <button id="aiClose" aria-label="Close Ask AI">✕</button>
+    </div>
+    <label for="aiItem">Homework</label>
+    <select id="aiItem"></select>
+    <div class="aifiles" id="aiFiles"></div>
+    <div class="aick" id="aiChips">
+      <button data-k="explain" class="on">Explain it</button>
+      <button data-k="hint">Just a hint</button>
+      <button data-k="example">Worked example</button>
+      <button data-k="check">Check my work</button>
+      <button data-k="plan">Study plan</button>
+    </div>
+    <div id="aiThread"></div>
+    <label for="aiAsk">What do you need help with?</label>
+    <textarea id="aiAsk" rows="4" placeholder="e.g. Explain how to do question 3"></textarea>
+    <div class="aiactions">
+      <button class="primary" id="aiSend">Ask here</button>
+      <button data-go="chatgpt">ChatGPT</button>
+      <button data-go="claude">Claude</button>
+      <button data-go="perplexity">Perplexity</button>
+      <button id="aiCopy">Copy prompt</button>
+    </div>
+    <p class="aihint" id="aiHint">Your homework details are added for you. "Ask here" needs a key below; the other buttons open your question in that AI, and Copy works for Gemini, Copilot or anything else.</p>
+    <details class="aikey" id="aiKeyBox">
+      <summary>Connect your own AI key (optional)</summary>
+      <div class="row" id="aiKeyRow">
+        <input id="aiKey" type="password" placeholder="Paste your Gemini API key" autocomplete="off" spellcheck="false" aria-label="Gemini API key">
+        <button class="primary" id="aiKeySave">Save</button>
+      </div>
+      <div class="aikeystate"><span id="aiKeyState">No key connected.</span><button id="aiKeyDel" hidden>Remove</button></div>
+      <p class="aihint" id="aiKeyNote">Free key from aistudio.google.com/apikey. It is stored only in this browser on this device — never in the file, and sent only to Google.</p>
+    </details>
+  </div>
 </div>
 
 <script>
@@ -228,11 +311,13 @@ button:active{transform:scale(.96)!important}
         '<input type="checkbox" data-id="'+i.id+'"'+(i.done?' checked':'')+' aria-label="Mark done">'+
         '<div class="body"><div class="title">'+esc(i.title)+'</div>'+
         '<div class="meta">'+(i.subject?'<span class="tag">'+esc(i.subject)+'</span>':'')+'<span class="'+cls+'">'+label+'</span></div>'+
-        (i.notes?'<div class="meta">'+esc(i.notes)+'</div>':'')+'</div>'+
+        (i.notes?'<div class="meta">'+esc(i.notes)+'</div>':'')+
+        (i.files&&i.files.length?'<div class="files">'+i.files.map(function(f){return '<span class="pchip">📎 '+esc(f.name)+'<button data-rmfile="'+f.id+'" data-own="'+i.id+'" aria-label="Remove file">✕</button></span>';}).join("")+'</div>':'')+'</div>'+
+        '<button class="att" data-attach="'+i.id+'" aria-label="Attach a file" title="Attach a file">📎</button>'+
+        '<button class="aib" data-ai="'+i.id+'" aria-label="Ask AI about this" title="Ask AI about this">✨</button>'+
         '<button class="del" data-del="'+i.id+'" aria-label="Delete">✕</button></div>';
     }
-    if(filter==="subject"){
-      var groups={},order=[];
+    var groups={},order=[];
       subjects.forEach(function(s){var k=s.toLowerCase();if(isFs()&&subjSel.length&&subjSel.indexOf(k)<0)return;if(!groups[k]){groups[k]={name:s,list:[]};order.push(k);}});
       shown.forEach(function(i){var k=(i.subject||"").toLowerCase();if(!groups[k]){groups[k]={name:i.subject||"No subject",list:[]};order.push(k);}groups[k].list.push(i);});
       order.sort(function(a,b){if(!a)return 1;if(!b)return -1;return a<b?-1:a>b?1:0;});
@@ -240,7 +325,6 @@ button:active{transform:scale(.96)!important}
         var g=groups[k],p=g.list.filter(function(i){return !i.done;}).length;
         return '<div class="grp"><div class="grp-h"><span>'+esc(g.name)+'</span><span class="meta">'+p+' pending · '+g.list.length+' total</span></div>'+g.list.map(row).join("")+'</div>';
       }).join("");
-    }else{box.innerHTML=shown.map(row).join("");}
   }
 
   $("add").addEventListener("click",function(){
@@ -253,8 +337,19 @@ button:active{transform:scale(.96)!important}
   $("title").addEventListener("keydown",function(e){if(e.key==="Enter")$("add").click();});
 
   $("list").addEventListener("click",function(e){
+    var ask=e.target.getAttribute("data-ai");
+    if(ask!==null){openAI(ask);return;}
+    var att=e.target.getAttribute("data-attach");
+    if(att!==null){pickFiles(att);return;}
+    var rm=e.target.getAttribute("data-rmfile");
+    if(rm!==null){removeFile(e.target.getAttribute("data-own"),rm);return;}
     var del=e.target.getAttribute("data-del");
-    if(del){items=items.filter(function(i){return String(i.id)!==del;});save();render();}
+    if(del){
+      var gone=byId(del);
+      if(gone&&gone.files)gone.files.forEach(function(f){dropFile(f.id);});
+      items=items.filter(function(i){return String(i.id)!==del;});
+      save();render();
+    }
   });
   $("list").addEventListener("change",function(e){
     var id=e.target.getAttribute("data-id");
@@ -289,7 +384,424 @@ button:active{transform:scale(.96)!important}
     document.body.style.overflow=on?"hidden":"";
     render();
   });
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("panel").classList.contains("fs"))$("fsBtn").click();});
+  document.addEventListener("keydown",function(e){
+    if(e.key!=="Escape")return;
+    if(!$("ai").hidden){closeAI();return;}
+    if($("panel").classList.contains("fs"))$("fsBtn").click();
+  });
+
+  /* ---------------- Ask AI ---------------- */
+  var AI_LINKS={chatgpt:"https://chatgpt.com/?q=",claude:"https://claude.ai/new?q=",perplexity:"https://www.perplexity.ai/search?q="};
+  var AI_HINT="Your homework details are typed in for you. For Gemini, Copilot or any other app, use Copy prompt.";
+  var AI_PRESETS=[
+    {k:"explain",q:"Explain how to do this step by step so I understand it."},
+    {k:"hint",q:"Give me a hint, not the full answer, so I can work it out myself."},
+    {k:"example",q:"Show me a similar worked example first, then let me try this one."},
+    {k:"check",q:"Check my work and point out my mistakes with why they are wrong. My attempt:"},
+    {k:"plan",q:"Help me plan this out: break it into small steps and say roughly how long each takes."}
+  ];
+  var aiItemId="";
+
+  function aiItem(){
+    for(var i=0;i<items.length;i++){if(String(items[i].id)===aiItemId)return items[i];}
+    return null;
+  }
+  function fillAIItems(){
+    var h='<option value="">General homework question</option>';
+    items.slice().sort(function(a,b){
+      if(a.done!==b.done)return a.done?1:-1;
+      var x=a.due||"9999",y=b.due||"9999";
+      return x<y?-1:x>y?1:0;
+    }).forEach(function(i){
+      h+='<option value="'+esc(i.id)+'">'+esc((i.subject?i.subject+" \u00b7 ":"")+i.title)+(i.done?" (done)":"")+'</option>';
+    });
+    $("aiItem").innerHTML=h;
+  }
+  function aiPreset(k){
+    Array.prototype.forEach.call($("aiChips").children,function(b){b.classList.toggle("on",b.getAttribute("data-k")===k);});
+    var q="";
+    AI_PRESETS.forEach(function(p){if(p.k===k)q=p.q;});
+    $("aiAsk").value=q;
+  }
+  function buildPrompt(){
+    var it=aiItem(),ask=$("aiAsk").value.trim(),out=[];
+    if(it){
+      out.push("I am a student working on this homework:");
+      out.push("- Assignment: "+it.title);
+      if(it.subject)out.push("- Subject: "+it.subject);
+      if(it.notes)out.push("- Instructions/notes: "+it.notes);
+      if(it.due)out.push("- Due: "+fmt(it.due));
+      if(it.files&&it.files.length)out.push("- Files I attached: "+it.files.map(function(f){return f.name;}).join(", ")+" (their contents are included below where readable)");
+      out.push("");
+    }
+    out.push(ask||"Help me with this homework.");
+    out.push("");
+    out.push("Explain your reasoning step by step so I can actually learn it, and keep the language simple.");
+    return out.join("\n");
+  }
+  function openAI(id){
+    aiItemId=id==null?"":String(id);
+    fillAIItems();
+    $("aiItem").value=aiItemId;
+    aiPreset("explain");
+    $("aiHint").textContent=AI_HINT;
+    aiThread=[];
+    $("aiThread").innerHTML="";
+    $("aiThread").classList.remove("on");
+    renderKeyState();
+    renderAIFiles();
+    $("ai").hidden=false;
+    $("aiFab").classList.add("on");
+    document.body.style.overflow="hidden";
+    setTimeout(function(){$("aiAsk").focus();},30);
+  }
+  function closeAI(){
+    $("ai").hidden=true;
+    $("aiFab").classList.remove("on");
+    document.body.style.overflow=isFs()?"hidden":"";
+    $("aiFab").focus();
+  }
+  function copyPrompt(){
+    var text=buildPrompt(),hint=$("aiHint");
+    function ok(){
+      hint.textContent="Prompt copied \u2014 paste it into any AI app.";
+      setTimeout(function(){hint.textContent=AI_HINT;},2500);
+    }
+    function fb(){
+      var ta=document.createElement("textarea");
+      ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+      document.body.appendChild(ta);ta.select();
+      try{document.execCommand("copy");ok();}catch(e){hint.textContent="Could not copy \u2014 select the text and copy it yourself.";}
+      document.body.removeChild(ta);
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(ok,fb);}else{fb();}
+  }
+
+  $("aiFab").addEventListener("click",function(){if($("ai").hidden)openAI(null);else closeAI();});
+  $("aiClose").addEventListener("click",closeAI);
+  $("ai").addEventListener("click",function(e){if(e.target===$("ai"))closeAI();});
+  $("aiItem").addEventListener("change",function(){aiItemId=this.value;renderAIFiles();});
+  $("aiChips").addEventListener("click",function(e){var k=e.target.getAttribute("data-k");if(k)aiPreset(k);});
+  $("aiAsk").addEventListener("input",function(){
+    Array.prototype.forEach.call($("aiChips").children,function(b){b.classList.remove("on");});
+  });
+  $("aiAsk").addEventListener("keydown",function(e){
+    if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){
+      e.preventDefault();
+      if(aiKey)askHere();
+      else window.open(AI_LINKS.chatgpt+encodeURIComponent(buildPrompt()),"_blank","noopener");
+    }
+  });
+  $("aiCopy").addEventListener("click",copyPrompt);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-go]"),function(b){
+    b.addEventListener("click",function(){
+      window.open(AI_LINKS[b.getAttribute("data-go")]+encodeURIComponent(buildPrompt()),"_blank","noopener");
+    });
+  });
+
+
+  /* ---------------- files attached to a homework ---------------- */
+  var FDB="homework-files-v1", FSTORE="files", fdbp=null;
+  function fdb(){
+    if(fdbp)return fdbp;
+    fdbp=new Promise(function(res,rej){
+      if(!window.indexedDB){rej(new Error("This browser cannot store files."));return;}
+      var rq=indexedDB.open(FDB,1);
+      rq.onupgradeneeded=function(){if(!rq.result.objectStoreNames.contains(FSTORE))rq.result.createObjectStore(FSTORE);};
+      rq.onsuccess=function(){res(rq.result);};
+      rq.onerror=function(){rej(rq.error||new Error("Could not open file storage."));};
+    });
+    return fdbp;
+  }
+  function fput(id,blob){
+    return fdb().then(function(d){
+      return new Promise(function(res,rej){
+        var tx=d.transaction(FSTORE,"readwrite");
+        tx.objectStore(FSTORE).put(blob,id);
+        tx.oncomplete=function(){res();};
+        tx.onerror=function(){rej(tx.error||new Error("Could not save the file."));};
+      });
+    });
+  }
+  function fget(id){
+    return fdb().then(function(d){
+      return new Promise(function(res,rej){
+        var tx=d.transaction(FSTORE,"readonly"),rq=tx.objectStore(FSTORE).get(id);
+        rq.onsuccess=function(){res(rq.result||null);};
+        rq.onerror=function(){rej(rq.error);};
+      });
+    });
+  }
+  function fdel(id){
+    return fdb().then(function(d){
+      return new Promise(function(res){
+        var tx=d.transaction(FSTORE,"readwrite");
+        tx.objectStore(FSTORE)["delete"](id);
+        tx.oncomplete=function(){res();};
+        tx.onerror=function(){res();};
+      });
+    }).catch(function(){});
+  }
+  function dropFile(id){fdel(id);}
+  function byId(id){
+    for(var i=0;i<items.length;i++){if(String(items[i].id)===String(id))return items[i];}
+    return null;
+  }
+  function fsize(n){
+    if(n>1048576)return (n/1048576).toFixed(1)+" MB";
+    if(n>1024)return Math.round(n/1024)+" KB";
+    return (n||0)+" B";
+  }
+  function fileKind(f){
+    var n=(f.name||"").toLowerCase(),t=(f.type||"").toLowerCase();
+    if(t==="application/pdf"||/\.pdf$/.test(n))return "pdf";
+    if(/^image\//.test(t)||/\.(png|jpe?g|webp|gif|heic|heif|bmp)$/.test(n))return "image";
+    if(/^text\//.test(t)||/\.(txt|md|markdown|csv|tsv|json|html?|css|js|ts|py|java|c|cpp|h|rtf)$/.test(n))return "text";
+    return "other";
+  }
+  var attachTarget=null;
+  function pickFiles(id){
+    attachTarget=String(id);
+    var inp=$("filePick");
+    inp.value="";
+    inp.click();
+  }
+  function attachFiles(list){
+    var it=byId(attachTarget);
+    attachTarget=null;
+    if(!it||!list.length)return;
+    var total=(it.files||[]).reduce(function(s,f){return s+(f.size||0);},0);
+    var picked=Array.prototype.slice.call(list);
+    picked.forEach(function(f){total+=(f.size||0);});
+    if(total>25*1024*1024){
+      alert("This homework's files would be over 25 MB in total. Remove something first.");
+      return;
+    }
+    Promise.all(picked.map(function(f){
+      var fid="f"+Date.now()+Math.random().toString(36).slice(2,8);
+      return fput(fid,f).then(function(){return {id:fid,name:f.name,type:f.type||"",size:f.size||0};});
+    })).then(function(metas){
+      it.files=(it.files||[]).concat(metas);
+      save();render();
+      if(!$("ai").hidden)renderAIFiles();
+    }).catch(function(err){
+      alert("This browser would not let me save that file ("+((err&&err.message)||"unknown error")+"). Try a smaller file, or paste the content into Notes instead.");
+    });
+  }
+  function removeFile(itemId,fileId){
+    var it=byId(itemId);
+    if(!it||!it.files)return;
+    it.files=it.files.filter(function(f){return f.id!==fileId;});
+    save();render();
+    dropFile(fileId);
+    if(!$("ai").hidden)renderAIFiles();
+  }
+  function toB64(blob){
+    return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onload=function(){var s=String(fr.result),i=s.indexOf(",");res(i>-1?s.slice(i+1):s);};
+      fr.onerror=function(){rej(fr.error||new Error("Could not read the file."));};
+      fr.readAsDataURL(blob);
+    });
+  }
+  function blobText(blob){
+    if(blob.text)return blob.text();
+    return new Promise(function(res){
+      var fr=new FileReader();
+      fr.onload=function(){res(String(fr.result));};
+      fr.onerror=function(){res("");};
+      fr.readAsText(blob);
+    });
+  }
+  function loadFilePart(f){
+    return fget(f.id).then(function(blob){
+      if(!blob)return {skip:f.name+" (missing)"};
+      var kind=fileKind(f);
+      if(kind==="other")return {skip:f.name+" (only PDF, image and text files can be read)"};
+      if(kind==="text"){
+        return blobText(blob).then(function(t){
+          var s=String(t);
+          return {text:"Contents of \""+f.name+"\":\n"+s.slice(0,20000)+(s.length>20000?"\n[...cut off...]":"")};
+        });
+      }
+      if(blob.size>15*1024*1024)return {skip:f.name+" (over 15 MB)"};
+      return toB64(blob).then(function(b64){
+        return {inline:{mimeType:(kind==="pdf"?"application/pdf":(f.type||"application/octet-stream")),data:b64}};
+      });
+    }).catch(function(){return {skip:f.name+" (could not be read)"};});
+  }
+  function renderAIFiles(){
+    var it=aiItem(),el=$("aiFiles");
+    if(!it||!it.files||!it.files.length){el.innerHTML="";return;}
+    el.innerHTML="<span>Sent with your question:</span>"+it.files.map(function(f){
+      return '<span class="pchip">📎 '+esc(f.name)+'<span>'+fsize(f.size)+'</span></span>';
+    }).join("");
+  }
+
+  $("filePick").addEventListener("change",function(){
+    var arr=Array.prototype.slice.call(this.files||[]);
+    this.value="";
+    if(arr.length)attachFiles(arr);
+  });
+
+  /* ------------- optional in-app chat (own key) ------------- */
+  var AKEY="homework-ai-key-v1", AMODEL="homework-ai-model-v1";
+  var aiKey="", aiModel="", aiThread=[], aiBusy=false;
+
+  function aiLoad(){
+    try{aiKey=localStorage.getItem(AKEY)||"";aiModel=localStorage.getItem(AMODEL)||"";}catch(e){aiKey="";aiModel="";}
+  }
+  function aiSaveKey(k){
+    aiKey=k||"";
+    try{
+      if(k)localStorage.setItem(AKEY,k);
+      else{localStorage.removeItem(AKEY);localStorage.removeItem(AMODEL);aiModel="";}
+    }catch(e){}
+  }
+  function aiSaveModel(m){aiModel=m||"";try{if(m)localStorage.setItem(AMODEL,m);else localStorage.removeItem(AMODEL);}catch(e){}}
+  function renderKeyState(){
+    $("aiKeyRow").style.display=aiKey?"none":"";
+    $("aiKeyDel").hidden=!aiKey;
+    $("aiKeyState").innerHTML=aiKey?("Key saved <b>\u2713</b><span> \u00b7 chat works in this browser only</span>"):"No key connected.";
+  }
+  function aiErr(status){
+    if(status===400||status===401||status===403)return "That key was not accepted. Check you copied all of it and that it is a Gemini API key.";
+    if(status===429)return "You hit the free-tier rate limit. Wait a minute, then try again.";
+    if(status===404)return "That model is not available for this key. Press Remove and save the key again.";
+    if(status>=500)return "Google's service is busy right now. Try again in a moment.";
+    return "Something went wrong (HTTP "+status+").";
+  }
+  function aiNetwork(err){
+    var m=String((err&&err.message)||err);
+    if(/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(m)){
+      return (location.protocol==="file:")
+        ? "The browser blocked the request. This page is open as a local file, so open it over http(s) instead \u2014 the ChatGPT / Claude buttons still work."
+        : "Could not reach Google \u2014 check your internet connection.";
+    }
+    return m;
+  }
+  function aiModelList(){
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":aiKey}})
+      .then(function(r){if(!r.ok)throw new Error(aiErr(r.status));return r.json();})
+      .then(function(d){
+        var names=(d.models||[]).filter(function(m){
+          return m.name&&(m.supportedGenerationMethods||[]).indexOf("generateContent")>-1;
+        }).map(function(m){return m.name.replace(/^models\//,"");});
+        if(!names.length)throw new Error("No chat models are available for this key.");
+        return names;
+      });
+  }
+  function aiPickModel(){
+    if(aiModel)return Promise.resolve(aiModel);
+    return aiModelList().then(function(names){
+      var pick="";
+      ["flash","pro"].some(function(word){
+        names.some(function(n){
+          if(n.indexOf(word)>-1&&!/lite|image|tts|embedding/.test(n)){pick=n;return true;}
+          return false;
+        });
+        return !!pick;
+      });
+      pick=pick||names[0];
+      aiSaveModel(pick);
+      return pick;
+    });
+  }
+  function addMsg(who,text,cls){
+    var d=document.createElement("div");
+    d.className="msg "+cls;
+    d.innerHTML='<span class="who">'+esc(who)+'</span>'+esc(text);
+    $("aiThread").appendChild(d);
+    $("aiThread").classList.add("on");
+    try{d.scrollIntoView({block:"nearest"});}catch(e){}
+  }
+  function askHere(){
+    var typed=$("aiAsk").value.trim();
+    if(!typed){$("aiAsk").focus();return;}
+    if(!aiKey){
+      $("aiKeyBox").open=true;
+      $("aiHint").textContent="Add your free Gemini key below to get help right here \u2014 or use the ChatGPT / Claude buttons without one.";
+      $("aiKey").focus();
+      return;
+    }
+    if(aiBusy)return;
+    aiBusy=true;
+    var it=aiItem(),files=(it&&it.files)||[],first=aiThread.length===0,skipped=[];
+    addMsg("You",typed+(files.length?"\n📎 "+files.map(function(f){return f.name;}).join(", "):""),"me");
+    $("aiAsk").value="";
+    Array.prototype.forEach.call($("aiChips").children,function(b){b.classList.remove("on");});
+    var typing=document.createElement("div");
+    typing.className="typing";typing.textContent="Thinking\u2026";
+    $("aiThread").appendChild(typing);
+    try{typing.scrollIntoView({block:"nearest"});}catch(e){}
+
+    (first&&files.length
+      ? Promise.all(files.map(function(f){return loadFilePart(f);})).then(function(res){
+          var parts=[{text:buildPrompt()}],extra=[];
+          res.forEach(function(r){
+            if(r.skip){skipped.push(r.skip);return;}
+            if(r.text)extra.push(r.text);
+            if(r.inline)parts.push({inlineData:r.inline});
+          });
+          if(extra.length)parts[0].text+="\n\n"+extra.join("\n\n");
+          return parts;
+        })
+      : Promise.resolve([{text:first?buildPrompt():typed}])
+    ).then(function(parts){
+      aiThread.push({role:"user",parts:parts});
+      if(skipped.length)addMsg("Not sent","These files were skipped: "+skipped.join("; "),"note");
+      return aiPickModel();
+    }).then(function(model){
+      return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-goog-api-key":aiKey},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:"You are a patient homework tutor for a school student. Explain step by step in simple language, show how to get to the answer rather than only stating it, and ask a short clarifying question if the task is unclear. Keep answers focused and not too long."}]},
+          contents:aiThread
+        })
+      }).then(function(r){if(!r.ok)throw new Error(aiErr(r.status));return r.json();});
+    }).then(function(d){
+      var c=(d.candidates&&d.candidates[0])||{};
+      var out=((c.content&&c.content.parts)||[]).map(function(p){return p.text||"";}).join("").trim();
+      if(!out)throw new Error("The AI sent back an empty answer"+(c.finishReason?" ("+c.finishReason+")":"")+".");
+      aiThread.push({role:"model",parts:[{text:out}]});
+      if(typing.parentNode)$("aiThread").removeChild(typing);
+      addMsg("AI",out,"ai");
+    }).catch(function(err){
+      if(typing.parentNode)$("aiThread").removeChild(typing);
+      addMsg("Problem",aiNetwork(err),"err");
+    }).then(function(){
+      aiBusy=false;
+      $("aiAsk").focus();
+    });
+  }
+
+  $("aiSend").addEventListener("click",askHere);
+  $("aiKeySave").addEventListener("click",function(){
+    var k=$("aiKey").value.trim();
+    if(!k){$("aiKey").focus();return;}
+    aiSaveKey(k);
+    $("aiKey").value="";
+    renderKeyState();
+    $("aiKeyState").textContent="Checking your key\u2026";
+    aiPickModel().then(function(m){
+      $("aiKeyState").innerHTML="Key saved <b>\u2713</b><span> \u00b7 using "+esc(m)+"</span>";
+    }).catch(function(err){
+      aiSaveKey("");
+      renderKeyState();
+      $("aiKeyState").textContent=aiNetwork(err);
+    });
+  });
+  $("aiKey").addEventListener("keydown",function(e){if(e.key==="Enter")$("aiKeySave").click();});
+  $("aiKeyDel").addEventListener("click",function(){
+    aiSaveKey("");aiSaveModel("");
+    renderKeyState();
+    $("aiKeyState").textContent="Key removed from this browser.";
+  });
+  if(location.protocol==="file:"){
+    $("aiKeyNote").textContent+=" Heads up: this page is open as a local file, so the browser may block sending. The ChatGPT / Claude buttons still work.";
+  }
+  aiLoad();
 
   load();render();
 })();
