@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Homework Tracker</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f6f7fb;--card:#ffffff;--text:#1d2330;--muted:#667085;--line:#e3e6ee;
+  --accent:#4f46e5;--accent-text:#ffffff;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12141c;--card:#1b1e29;--text:#eceef5;--muted:#9aa3b5;--line:#2b3040;
+    --accent:#818cf8;--accent-text:#12141c;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12141c;--card:#1b1e29;--text:#eceef5;--muted:#9aa3b5;--line:#2b3040;
+  --accent:#818cf8;--accent-text:#12141c;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
+textarea{resize:vertical;min-height:60px}
+input[type=date]{cursor:pointer}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px}
+button.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:600}
+.stats{display:flex;gap:10px;margin-bottom:16px}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.4rem}
+.stat span{font-size:.75rem;color:var(--muted)}
+.tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.item{display:flex;gap:14px;align-items:flex-start;padding:18px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item input[type=checkbox]{width:26px;height:26px;margin-top:2px;flex:none}
+.body{flex:1;min-width:0}
+.title{font-weight:600;font-size:1.2rem;word-wrap:break-word}
+.done .title{text-decoration:line-through;color:var(--muted)}
+.meta{font-size:.95rem;color:var(--muted);margin-top:3px}
+.tag{display:inline-block;font-size:.72rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);margin-right:6px}
+.overdue{color:var(--bad);font-weight:600}
+.soon{color:var(--warn);font-weight:600}
+.del{color:var(--bad);padding:4px 10px}
+.empty{text-align:center;color:var(--muted);padding:24px 0}
+.bar{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
+.bar .tabs{margin-bottom:0}
+.listwrap{position:relative}
+#fsBtn{position:absolute;top:10px;right:10px;z-index:3;width:40px;height:40px;padding:0;font-size:1.3rem;line-height:1}
+#panel.fs{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+#panel.fs .bar{max-width:1100px;width:100%;margin:0 auto 12px}
+#panel.fs .listwrap{flex:1;min-height:0;display:flex;flex-direction:column;max-width:1100px;width:100%;margin:0 auto}
+#panel.fs #list{flex:1;min-height:0;overflow:auto}
+.sfilter{display:none}
+#panel.fs .sfilter{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex-shrink:0;max-height:112px;overflow:auto;max-width:1100px;width:100%;margin:0 auto 12px}
+.fl{font-size:.85rem;color:var(--muted)}
+.fchip{border-radius:99px;padding:7px 14px}
+.fchip.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+
+/* visual pop */
+h1{font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,var(--accent),#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
+.card,.stat{box-shadow:0 4px 18px rgba(30,35,70,.09)}
+.stat{transition:transform .18s ease,box-shadow .18s ease}
+.stat b{color:var(--accent)}
+.stat:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(79,70,229,.22)}
+button,select,input[type=checkbox],input[type=date]{cursor:pointer}
+button,input[type=checkbox]{transition:transform .16s ease,box-shadow .16s ease,background .16s ease,border-color .16s ease,color .16s ease}
+button.primary,.tabs button.on,.fchip.on{box-shadow:0 4px 12px rgba(79,70,229,.35)}
+input,select,textarea{transition:border-color .16s ease,box-shadow .16s ease}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(129,140,248,.35)}
+button:focus-visible,input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.item{transition:background .16s ease;margin:0 -12px;padding-left:12px;padding-right:12px;border-radius:10px}
+.item:hover{background:rgba(129,140,248,.12)}
+.grp-h{color:var(--accent)}
+#panel.fs .sfilter{padding:6px}
+@media (hover:hover){
+  button:hover,input[type=checkbox]:hover{transform:scale(1.08);box-shadow:0 8px 20px rgba(79,70,229,.3)}
+  button.primary:hover{transform:scale(1.04)}
+  .del:hover{background:rgba(220,38,38,.12);border-color:var(--bad)}
+  .chip button:hover{transform:scale(1.3);box-shadow:none;color:var(--bad)}
+  #fsBtn:hover{transform:scale(1.15)}
+}
+button:active{transform:scale(.96)!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}button:hover,.stat:hover{transform:none!important}}
+#list{padding:56px 28px 24px;min-height:65vh}
+.note{font-size:.78rem;color:var(--muted);text-align:center;margin-top:8px}
+.row{display:flex;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border:1px solid var(--line);border-radius:99px;background:var(--bg)}
+.chip button{border:0;background:none;padding:0 6px;color:var(--muted)}
+.grp{margin-bottom:20px}
+.grp:last-child{margin-bottom:0}
+.grp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;font-size:1.05rem;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+.grp-h+.item{border-top:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1> Homework Tracker</h1>
+  <p class="sub">Keep track of every assignment in one place.</p>
+
+  <div class="stats">
+    <div class="stat"><b id="sTotal">0</b><span>Total</span></div>
+    <div class="stat"><b id="sPending">0</b><span>Pending</span></div>
+    <div class="stat"><b id="sOver">0</b><span>Overdue</span></div>
+    <div class="stat"><b id="sDone">0</b><span>Done</span></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:8px">My subjects</div>
+    <div class="row"><input id="newSubject" placeholder="Add a subject, e.g. Math"><button class="primary" id="addSubject">Add</button></div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div><label for="subject">Subject</label><select id="subject"></select></div>
+      <div><label for="due">Due date</label><input id="due" type="date"></div>
+      <div class="full"><label for="title">Homework</label><input id="title" placeholder="e.g. Chapter 5 exercises"></div>
+      <div class="full"><label for="notes">Notes (optional)</label><textarea id="notes" placeholder="Pages, instructions, reminders…"></textarea></div>
+      <div class="full"><button class="primary" id="add" style="width:100%">Add homework</button></div>
+    </div>
+    
+  </div>
+
+  <div id="panel">
+  <div class="bar"><div class="tabs" id="tabs">
+    <button data-f="all" class="on">All</button>
+    <button data-f="pending">Pending</button>
+    <button data-f="done">Done</button>
+    <button data-f="subject">By subject</button>
+  </div>
+  </div>
+
+  <div class="sfilter" id="sfilter"></div>
+  <div class="listwrap"><button id="fsBtn" aria-label="Full screen" title="Full screen">⤢</button><div class="card" id="list"></div></div>
+  </div>
+  <p class="note">Saved in this browser on this device.</p>
+</div>
+
+<script>
+(function(){
+  var KEY="homework-tracker-v1", SKEY="homework-subjects-v1", items=[], subjects=[], subjSel=[], filter="all";
+  function load(){
+    try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);if(Array.isArray(d))items=d;}}catch(e){items=[];}
+    try{var s=localStorage.getItem(SKEY);if(s){var sd=JSON.parse(s);if(Array.isArray(sd))subjects=sd;}else{items.forEach(function(i){if(i.subject&&!hasSub(i.subject))subjects.push(i.subject);});subjects.sort();}}catch(e){}
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}}
+  function saveSub(){try{localStorage.setItem(SKEY,JSON.stringify(subjects));}catch(e){}}
+  function isFs(){return $("panel").classList.contains("fs");}
+  function renderFilter(){
+    var names=[],seen={},hasNone=false;
+    function add(n){var k=n.toLowerCase();if(!seen[k]){seen[k]=1;names.push({k:k,n:n});}}
+    subjects.forEach(add);
+    items.forEach(function(i){if(i.subject)add(i.subject);else hasNone=true;});
+    names.sort(function(a,b){return a.k<b.k?-1:1;});
+    if(hasNone)names.push({k:"",n:"No subject"});
+    var h='<span class="fl">Show:</span><button class="fchip'+(subjSel.length?'':' on')+'" data-sf="__all">All</button>';
+    names.forEach(function(x){h+='<button class="fchip'+(subjSel.indexOf(x.k)>-1?' on':'')+'" data-sf="'+esc(x.k)+'">'+esc(x.n)+'</button>';});
+    $("sfilter").innerHTML=h;
+  }
+  function hasSub(n){return subjects.some(function(s){return s.toLowerCase()===n.toLowerCase();});}
+  function renderSubjects(){
+    var sel=$("subject"),cur=sel.value;
+    sel.innerHTML='<option value="">No subject</option>'+subjects.map(function(s){return '<option value="'+esc(s)+'">'+esc(s)+'</option>';}).join("");
+    sel.value=cur;
+    $("chips").innerHTML=subjects.length?subjects.map(function(s,idx){return '<span class="chip">'+esc(s)+'<button data-rs="'+idx+'" aria-label="Remove subject">\u2715</button></span>';}).join(""):'<span class="meta">No subjects yet. Add your first one above.</span>';
+  }
+  function addSubject(){
+    var inp=$("newSubject"),n=inp.value.trim();
+    if(!n){inp.focus();return;}
+    if(!hasSub(n)){subjects.push(n);subjects.sort(function(a,b){return a.toLowerCase()<b.toLowerCase()?-1:1;});saveSub();}
+    inp.value="";renderSubjects();inp.focus();
+  }
+  function $(id){return document.getElementById(id);}
+  function today(){var d=new Date();d.setHours(0,0,0,0);return d;}
+  function parse(s){if(!s)return null;var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+  function fmt(s){var d=parse(s);return d?d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}):"No due date";}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+  function render(){
+    var t=today(), over=0, done=0;
+    items.forEach(function(i){
+      if(i.done)done++;
+      else{var d=parse(i.due);if(d&&d<t)over++;}
+    });
+    $("sTotal").textContent=items.length;
+    $("sDone").textContent=done;
+    $("sPending").textContent=items.length-done;
+    $("sOver").textContent=over;
+    renderFilter();
+
+    renderSubjects();
+
+    var shown=items.filter(function(i){return filter==="all"||filter==="subject"||(filter==="done"?i.done:!i.done);});
+    if(isFs()&&subjSel.length)shown=shown.filter(function(i){return subjSel.indexOf((i.subject||"").toLowerCase())>-1;});
+    shown.sort(function(a,b){
+      if(a.done!==b.done)return a.done?1:-1;
+      var x=a.due||"9999",y=b.due||"9999";
+      return x<y?-1:x>y?1:0;
+    });
+    var box=$("list");
+    if(!shown.length){box.innerHTML='<div class="empty">Nothing here yet.</div>';return;}
+    function row(i){
+      var d=parse(i.due),cls="",label=fmt(i.due);
+      if(!i.done&&d){
+        var diff=Math.round((d-t)/864e5);
+        if(diff<0){cls="overdue";label+=" · overdue";}
+        else if(diff===0){cls="soon";label+=" · due today";}
+        else if(diff===1){cls="soon";label+=" · due tomorrow";}
+      }
+      return '<div class="item'+(i.done?' done':'')+'">'+
+        '<input type="checkbox" data-id="'+i.id+'"'+(i.done?' checked':'')+' aria-label="Mark done">'+
+        '<div class="body"><div class="title">'+esc(i.title)+'</div>'+
+        '<div class="meta">'+(i.subject?'<span class="tag">'+esc(i.subject)+'</span>':'')+'<span class="'+cls+'">'+label+'</span></div>'+
+        (i.notes?'<div class="meta">'+esc(i.notes)+'</div>':'')+'</div>'+
+        '<button class="del" data-del="'+i.id+'" aria-label="Delete">✕</button></div>';
+    }
+    if(filter==="subject"){
+      var groups={},order=[];
+      subjects.forEach(function(s){var k=s.toLowerCase();if(isFs()&&subjSel.length&&subjSel.indexOf(k)<0)return;if(!groups[k]){groups[k]={name:s,list:[]};order.push(k);}});
+      shown.forEach(function(i){var k=(i.subject||"").toLowerCase();if(!groups[k]){groups[k]={name:i.subject||"No subject",list:[]};order.push(k);}groups[k].list.push(i);});
+      order.sort(function(a,b){if(!a)return 1;if(!b)return -1;return a<b?-1:a>b?1:0;});
+      box.innerHTML=order.map(function(k){
+        var g=groups[k],p=g.list.filter(function(i){return !i.done;}).length;
+        return '<div class="grp"><div class="grp-h"><span>'+esc(g.name)+'</span><span class="meta">'+p+' pending · '+g.list.length+' total</span></div>'+g.list.map(row).join("")+'</div>';
+      }).join("");
+    }else{box.innerHTML=shown.map(row).join("");}
+  }
+
+  $("add").addEventListener("click",function(){
+    var title=$("title").value.trim();
+    if(!title){$("title").focus();return;}
+    items.push({id:Date.now()+Math.floor(Math.random()*1000),title:title,subject:$("subject").value.trim(),due:$("due").value,notes:$("notes").value.trim(),done:false});
+    $("title").value="";$("notes").value="";$("due").value="";
+    save();render();$("title").focus();
+  });
+  $("title").addEventListener("keydown",function(e){if(e.key==="Enter")$("add").click();});
+
+  $("list").addEventListener("click",function(e){
+    var del=e.target.getAttribute("data-del");
+    if(del){items=items.filter(function(i){return String(i.id)!==del;});save();render();}
+  });
+  $("list").addEventListener("change",function(e){
+    var id=e.target.getAttribute("data-id");
+    if(id){items.forEach(function(i){if(String(i.id)===id)i.done=e.target.checked;});save();render();}
+  });
+  $("tabs").addEventListener("click",function(e){
+    var f=e.target.getAttribute("data-f");
+    if(!f)return;
+    filter=f;
+    Array.prototype.forEach.call($("tabs").children,function(b){b.classList.toggle("on",b===e.target);});
+    render();
+  });
+
+  $("due").addEventListener("click",function(){try{if(this.showPicker)this.showPicker();}catch(e){}});
+
+  $("sfilter").addEventListener("click",function(e){
+    var k=e.target.getAttribute("data-sf");
+    if(k===null)return;
+    if(k==="__all")subjSel=[];
+    else{var ix=subjSel.indexOf(k);if(ix>-1)subjSel.splice(ix,1);else subjSel.push(k);}
+    render();
+  });
+  $("addSubject").addEventListener("click",addSubject);
+  $("newSubject").addEventListener("keydown",function(e){if(e.key==="Enter")addSubject();});
+  $("chips").addEventListener("click",function(e){var r=e.target.getAttribute("data-rs");if(r!==null){subjects.splice(+r,1);saveSub();render();}});
+
+  $("fsBtn").addEventListener("click",function(){
+    var on=$("panel").classList.toggle("fs");
+    this.textContent=on?"\u2715":"\u2922";
+    this.setAttribute("aria-label",on?"Close":"Full screen");
+    this.title=on?"Close":"Full screen";
+    document.body.style.overflow=on?"hidden":"";
+    render();
+  });
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("panel").classList.contains("fs"))$("fsBtn").click();});
+
+  load();render();
+})();
+</script>
+</body>
+</html>
